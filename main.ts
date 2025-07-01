@@ -65,6 +65,31 @@ api.get("/youtube/channel/:channelIds", async (ctx) => {
   }
 });
 
+// Bilibili 圖片代理
+api.get("/bilibili/proxyimg", async (ctx) => {
+  const url = ctx.req.query("url");
+  if (!url) return ctx.json({ error: "請提供 url 參數" }, 400);
+
+  try {
+    const res = await fetch(url, {
+      headers: { Referer: "https://www.bilibili.com/" },
+    });
+
+    const contentType = res.headers.get("content-type") || "application/octet-stream";
+    const data = await res.arrayBuffer();
+
+    return new Response(data, {
+      status: 200,
+      headers: {
+        "Content-Type": contentType,
+        "Cache-Control": "public, max-age=86400",
+      },
+    });
+  } catch (err) {
+    return ctx.json({ error: "圖片代理失敗", message: err.message }, 500);
+  }
+});
+
 // YouTube 影片資訊
 api.get("/youtube/videos/:videoIds", async (ctx) => {
   const videoIds = ctx.req.param("videoIds")?.split(",").map((v) => v.trim()).filter(Boolean);
@@ -84,6 +109,7 @@ api.get("/youtube/videos/:videoIds", async (ctx) => {
     return ctx.json({ error: "YouTube 錯誤", message: err.message }, 500);
   }
 });
+
 
 // 倒數計時
 api.get("/countdown/:slug", (ctx) => {
@@ -124,31 +150,6 @@ api.get("/bilibili/:bvid", async (ctx) => {
     return ctx.json({ pic, title, owner, stat, data: simple, pages });
   } catch (err) {
     return ctx.json({ error: "Bilibili 錯誤", message: err.message }, 500);
-  }
-});
-
-// Bilibili 圖片代理
-api.get("/bilibili/proxyimg", async (ctx) => {
-  const url = ctx.req.query("url");
-  if (!url) return ctx.json({ error: "請提供 url 參數" }, 400);
-
-  try {
-    const res = await fetch(url, {
-      headers: { Referer: "https://www.bilibili.com/" },
-    });
-
-    const contentType = res.headers.get("content-type") || "application/octet-stream";
-    const data = await res.arrayBuffer();
-
-    return new Response(data, {
-      status: 200,
-      headers: {
-        "Content-Type": contentType,
-        "Cache-Control": "public, max-age=86400",
-      },
-    });
-  } catch (err) {
-    return ctx.json({ error: "圖片代理失敗", message: err.message }, 500);
   }
 });
 
